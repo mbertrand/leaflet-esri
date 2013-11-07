@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>
+      Esri Leaflet
+    </title>
+    <link rel="stylesheet" href="leaflet.css" />
+    <link rel="stylesheet" href="esri.css" />
+    <script src="leaflet.js"></script>
+    <script src="dist/esri-leaflet.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <!--[if lte IE 8]>
+    	<link rel="stylesheet" href="/the/path/to/leaflet.ie.css" />
+    <![endif]-->
+    <script type="text/javascript">
+      var enableMapMove = true;
+      var bounds = [];
+      
+      function onMapMove(e){
+        if (enableMapMove) {
+          reverse_geocode();
+        }
+        else {
+          enableMapMove = true;
+          
+        }
+      }
+
+      function reverse_geocode(){
+        //get the center
+        var mapCenter = map.getCenter();
+        var baseUrl = "http://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?location=" + mapCenter.lng + "," + mapCenter.lat + "&distance=200&outSR=&f=pjson";
+        $.ajax({
+            type: "GET",
+            url: baseUrl,
+            success: function(response){
+            	    var zoo = map.getZoom();
+            	    locationDiv = document.createElement("div");
+            	    $(locationDiv).addClass("location");
+      
+            	    if (response.address) {
+            	    	    locationDiv.innerHTML = response.address.Address + "," + response.address.City  +"," + response.address.Region;
+            	    }
+            	    else {
+            	    	    locationDiv.innerHTML = mapCenter.lng + "," + mapCenter.lat;
+            	    }
+
+            	    var bounds = map.getBounds();
+            	    var bboxDiv = document.createElement( "div" );
+            	    $(bboxDiv).addClass("bbox");
+      
+            	    $(bboxDiv).html("<h3>Bounding Box</h3>" + bounds._northEast.lat + "," + bounds._northEast.lng + ", <br />" + bounds._southWest.lat + "," + bounds._southWest.lng);
+      
+            	    $(locationDiv).append(bboxDiv);
+      
+            	    $(locationDiv).click(function() {
+            	    		    enableMapMove = false;
+            	    		    map.setView(mapCenter,zoo);
+            	    });
+      
+            	    $( "#boundsDiv" ).append(locationDiv);          
+            },
+            dataType: "json"
+        }); 
+ }
+    </script>
+  </head>
+  <body>
+    
+    <div id="map">
+    </div>
+    <script>
+      var map = L.map('map').setView([45.52963623111275,-122.67389774322508], 12);
+      
+      // ArcGIS Online Basemaps - Streets, Topographic, Gray, GrayLabels, Oceans, NationalGeographic, Imagery, ImageryLabels
+      L.esri.basemapLayer("Streets").addTo(map);
+      L.esri.featureLayer('http://services.arcgis.com/rOo16HdIMeOBI4Mb/arcgis/rest/services/stops/FeatureServer/0/').addTo(map);
+      map.on('moveend', onMapMove);
+      reverse_geocode();
+    </script>
+    
+    <div id="boundsDiv">
+      <h3>
+        Map History
+        <h3>
+        </div>
+      </body>
+    </html>
